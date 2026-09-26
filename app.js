@@ -1089,14 +1089,50 @@
       var songLabel = playBtn.dataset.label;
       var wrap = document.createElement("div");
       wrap.className = "ex-player";
-      wrap.innerHTML =
-        '<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="https://music.163.com/outchain/player?type=2&id=' +
+      var frame = document.createElement("iframe");
+      frame.setAttribute("frameborder", "no");
+      frame.setAttribute("border", "0");
+      frame.setAttribute("marginwidth", "0");
+      frame.setAttribute("marginheight", "0");
+      frame.setAttribute("width", "330");
+      frame.setAttribute("height", "86");
+      frame.setAttribute("allow", "autoplay");
+      frame.setAttribute("title", "网易云音乐外链播放器：" + songLabel);
+      var note = document.createElement("span");
+      note.className = "ex-player-note";
+      note.textContent = "正在加载播放器 · 网易云音乐";
+      var songUrl = "https://music.163.com/song?id=" + encodeURIComponent(songId);
+      var frameReady = false;
+      function showPlayerFallback() {
+        if (frameReady) return;
+        frame.hidden = true;
+        note.textContent = "";
+        var link = document.createElement("a");
+        link.className = "ex-fallback";
+        link.href = songUrl;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.textContent = "播放器加载失败，点此在网易云音乐打开 ↗";
+        note.appendChild(link);
+      }
+      var slowTimer = setTimeout(showPlayerFallback, 9000);
+      frame.addEventListener("load", function () {
+        frameReady = true;
+        clearTimeout(slowTimer);
+        frame.hidden = false;
+        note.textContent = "外链播放器 · 网易云音乐";
+      });
+      frame.src =
+        "https://music.163.com/outchain/player?type=2&id=" +
         encodeURIComponent(songId) +
-        '&auto=1&height=66" title="网易云音乐外链播放器：' +
-        esc(songLabel) +
-        '"></iframe>' +
-        '<span class="ex-player-note">外链播放器 · 网易云音乐</span>';
+        "&auto=1&height=66";
+      wrap.appendChild(frame);
+      wrap.appendChild(note);
       li.appendChild(wrap);
+      frame.style.transform = "translateZ(0)";
+      setTimeout(function () {
+        frame.style.transform = "";
+      }, 700);
       return;
     }
 

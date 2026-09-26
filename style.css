@@ -1557,6 +1557,25 @@ mark {
   text-align: center;
 }
 
+.ex-fallback {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 2px;
+  background: var(--fill);
+  font-family: var(--font-ui);
+  font-size: 12.5px;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+.ex-fallback:hover {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
 .no-desc {
   border: 1px dashed var(--line);
   padding: 18px 16px;

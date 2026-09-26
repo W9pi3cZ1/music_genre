@@ -253,5 +253,14 @@
     <script src="data.js" defer></script>
     <script src="netease.js" defer></script>
     <script src="app.js" defer></script>
+  
+<pre id="probe-report" style="display:none"></pre>
+<script>
+window.addEventListener('load', function(){ setTimeout(function(){
+  document.querySelectorAll('.row')[40].click();
+  setTimeout(function(){ document.getElementById('probe-report').textContent = JSON.stringify({ok:1}); }, 800);
+}, 1400); });
+</script>
+
   </body>
 </html>

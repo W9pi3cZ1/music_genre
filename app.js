@@ -278,13 +278,13 @@
     '<div class="mast-eyebrow"><span>叶亦苏 Yeisu 整理</span></div>' +
     '<h1 class="mast-title">电子音乐风格体系</h1>' +
     '<p class="mast-latin">An Electronic Music Taxonomy</p>' +
-    '<p class="mast-deck">收录 <b>UK Bass</b>、<b>US Bass</b>、<b>HDM</b>、<b>Hardcore</b>、<b>Trance</b>、<b>Techno</b>、<b>House</b>、<b>Breakbeat</b> 等 ' +
+    '<p class="mast-deck"><span class="deck-counts">收录 <b>UK Bass</b>、<b>US Bass</b>、<b>HDM</b>、<b>Hardcore</b>、<b>Trance</b>、<b>Techno</b>、<b>House</b>、<b>Breakbeat</b> 等 ' +
     chapters.length +
     " 个篇章、共 <b>" +
     totalNodes +
     "</b> 条曲风条目，其中 <b>" +
     totalDesc +
-    "</b> 条附有介绍。左侧目录按篇章编号索引，点击任意条目在右侧展开详情；按 <kbd>/</kbd> 直接搜索，按 <kbd>R</kbd> 随机翻一条。</p>" +
+    "</b> 条附有介绍。</span><span class=\"deck-keys\">左侧目录按篇章编号索引，点击任意条目在右侧展开详情；按 <kbd>/</kbd> 直接搜索，按 <kbd>R</kbd> 随机翻一条。</span><span class=\"deck-touch\">点击任意条目查看详细介绍，或在上方搜索框输入曲风、别名。</span></p>" +
     '<div class="mast-stats">' +
     '<div class="stat"><b>' +
     chapters.length +
@@ -300,7 +300,7 @@
     "</b><span>例曲推荐 Tracks</span></div>" +
     "</div>" +
     '<div class="key">' +
-    '<div class="key"><div class="key-head"><span>色标</span><i>Colour Key</i><span class="key-live" id="key-live"><em>01</em>House (99条目)</span></div>' +
+    '<div class="key"><div class="key-head"><span>色标</span><i>Colour Key</i><span class="key-hint">点击色块跳转篇章</span><span class="key-live" id="key-live"><em>01</em>House</span></div>' +
     keyStrip +
     '<div class="key-note">' +
     '<span><i class="on"></i>附有介绍</span>' +
@@ -547,6 +547,9 @@
   function isMobile() {
     return window.matchMedia("(max-width: 980px)").matches;
   }
+  function isSheet() {
+    return window.matchMedia("(max-width: 700px)").matches;
+  }
   function selectRow(row) {
     if (currentRow && currentRow !== row) currentRow.classList.remove("sel");
     currentRow = row;
@@ -580,6 +583,42 @@
     document.body.classList.remove("locked");
     selectRow(null);
     if (!skipHash) clearHash();
+  }
+
+  var dTop = document.getElementById("d-top");
+  if (dTop) {
+    var dragFrom = null;
+    var dragDy = 0;
+    dTop.addEventListener(
+      "touchstart",
+      function (e) {
+        if (!isSheet() || e.touches.length !== 1) return;
+        dragFrom = e.touches[0].clientY;
+        dragDy = 0;
+        detailEl.style.transition = "none";
+      },
+      { passive: true }
+    );
+    dTop.addEventListener(
+      "touchmove",
+      function (e) {
+        if (dragFrom === null) return;
+        dragDy = Math.max(0, e.touches[0].clientY - dragFrom);
+        detailEl.style.transform = "translateY(" + dragDy + "px)";
+        if (e.cancelable) e.preventDefault();
+      },
+      { passive: false }
+    );
+    function endDrag() {
+      if (dragFrom === null) return;
+      dragFrom = null;
+      var closing = dragDy > 88;
+      detailEl.style.transition = "";
+      detailEl.style.transform = "";
+      if (closing) closeDetail();
+    }
+    dTop.addEventListener("touchend", endDrag);
+    dTop.addEventListener("touchcancel", endDrag);
   }
 
   function sec(label, sub, inner) {
@@ -754,7 +793,7 @@
     if (opts.reveal !== false) {
       row.scrollIntoView({
         behavior: opts.instant ? "auto" : "smooth",
-        block: "center",
+        block: isSheet() ? "start" : "center",
       });
       flashRow(row);
     }
@@ -769,6 +808,9 @@
 
   var searchInput = document.getElementById("search");
   var searchBox = document.getElementById("search-results");
+  if (searchInput && window.matchMedia("(max-width: 700px)").matches) {
+    searchInput.setAttribute("placeholder", "搜索曲风 / 别名");
+  }
   var searchMatches = [];
   var searchTimer = null;
   var srActive = -1;
@@ -1348,11 +1390,60 @@
     });
   }
 
+  var menuBtn = document.getElementById("menu-btn");
+  var mmenu = document.getElementById("mmenu");
+  var mmTheme = document.getElementById("mm-theme-state");
+  function closeMenu() {
+    if (!mmenu || !mmenu.classList.contains("show")) return;
+    mmenu.classList.remove("show");
+    if (menuBtn) menuBtn.setAttribute("aria-expanded", "false");
+  }
+  function toggleMenu() {
+    if (!mmenu) return;
+    var on = !mmenu.classList.contains("show");
+    mmenu.classList.toggle("show", on);
+    if (menuBtn) menuBtn.setAttribute("aria-expanded", on ? "true" : "false");
+    if (on && mmTheme) {
+      mmTheme.textContent = document.documentElement.dataset.theme === "dark" ? "深色" : "浅色";
+    }
+  }
+  if (menuBtn) {
+    menuBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      toggleMenu();
+    });
+  }
+  function bindMenu(id, fn) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("click", function () {
+        closeMenu();
+        fn();
+      });
+    }
+  }
+  bindMenu("mm-random", function () {
+    randomEntry();
+  });
+  bindMenu("mm-group", function () {
+    openGroup();
+  });
+  bindMenu("mm-about", function () {
+    openAbout();
+  });
+  bindMenu("mm-theme", function () {
+    if (themeBtn) themeBtn.click();
+  });
+  document.addEventListener("click", function (e) {
+    if (!e.target.closest("#masthead")) closeMenu();
+  });
+
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       closeDetail();
       closeAbout();
       closeGroup();
+      closeMenu();
       hideSearch();
       if (document.activeElement === searchInput) searchInput.blur();
       return;

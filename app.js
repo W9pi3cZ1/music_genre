@@ -892,12 +892,33 @@
     searchBox.innerHTML = "";
     if (searchInput) searchInput.setAttribute("aria-expanded", "false");
     clearActiveOption();
+    document.body.classList.remove("searching");
+  }
+
+  var SEARCH_HINT = '<div class="sr-empty">输入曲风名称、别名或篇章开始搜索</div>';
+
+  function enterSearch() {
+    if (!isSheet() || !searchInput) return;
+    document.body.classList.add("searching");
+    if (!searchBox.innerHTML) searchBox.innerHTML = SEARCH_HINT;
+    searchBox.style.display = "block";
+    searchInput.setAttribute("aria-expanded", "true");
+  }
+
+  function exitSearch() {
+    hideSearch();
+    if (searchInput) searchInput.blur();
   }
 
   function doSearch(q) {
     q = q.toLowerCase().trim();
     clearActiveOption();
     if (!q) {
+      if (document.body.classList.contains("searching")) {
+        searchBox.style.display = "block";
+        searchBox.innerHTML = SEARCH_HINT;
+        return;
+      }
       hideSearch();
       return;
     }
@@ -1157,6 +1178,10 @@
       doSearch(searchInput.value);
     }, 160);
   });
+  searchInput.addEventListener("focus", enterSearch);
+  searchInput.addEventListener("click", enterSearch);
+  var searchCancelBtn = document.getElementById("search-cancel");
+  if (searchCancelBtn) searchCancelBtn.addEventListener("click", exitSearch);
   searchInput.addEventListener("keydown", function (e) {
     if (searchBox.style.display === "none" || !searchBox.style.display) return;
     if (e.key === "ArrowDown") {

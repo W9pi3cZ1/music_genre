@@ -379,6 +379,10 @@ mark {
   flex: 0 0 auto;
 }
 
+.search-cancel {
+  display: none;
+}
+
 #search-results {
   position: absolute;
   top: calc(100% + 6px);
@@ -1540,7 +1544,8 @@ mark {
 .ex-player iframe {
   border: 0;
   display: block;
-  background: var(--paper-3);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line-3);
 }
 .ex-player-note {
   grid-column: 1 / -1;
@@ -2038,6 +2043,53 @@ mark {
   }
   .search-kbd {
     display: none;
+  }
+  body.searching #masthead {
+    z-index: 95;
+  }
+  body.searching {
+    overflow: hidden;
+  }
+  body.searching .searchwrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 58px;
+    max-width: none;
+    padding: 0 4px 0 12px;
+    background: var(--paper);
+    border: 0;
+    border-bottom: 1px solid var(--line-2);
+    z-index: 92;
+  }
+  body.searching .search-ico {
+    margin-left: 0;
+  }
+  body.searching #search {
+    padding: 0 8px;
+  }
+  body.searching .search-cancel {
+    display: block;
+    flex: 0 0 auto;
+    min-height: 44px;
+    padding: 0 10px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    color: var(--ink-3);
+  }
+  body.searching #search-results {
+    display: block;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: none;
+    background: var(--paper);
+    border: 0;
+    box-shadow: none;
+    z-index: 92;
   }
   .mmenu {
     display: block;

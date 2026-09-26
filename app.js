@@ -275,7 +275,6 @@
 
   var mastHtml =
     '<section class="mast">' +
-    '<div class="mast-eyebrow"><span>叶亦苏 Yeisu 整理</span></div>' +
     '<h1 class="mast-title">电子音乐风格体系</h1>' +
     '<p class="mast-latin">An Electronic Music Taxonomy</p>' +
     '<p class="mast-deck"><span class="deck-counts">收录 <b>UK Bass</b>、<b>US Bass</b>、<b>HDM</b>、<b>Hardcore</b>、<b>Trance</b>、<b>Techno</b>、<b>House</b>、<b>Breakbeat</b> 等 ' +
@@ -1215,8 +1214,8 @@
       closeDetail();
     }
     if (!inPath(e, "#search-results") && !inPath(e, "#search")) hideSearch();
-    if (!inPath(e, "#about-dialog") && !inPath(e, "#about-btn")) closeAbout();
-    if (!inPath(e, "#group-dialog") && !inPath(e, "#group-btn")) closeGroup();
+    if (!inPath(e, "#about-dialog") && !inPath(e, "#about-btn") && !inPath(e, "#mmenu")) closeAbout();
+    if (!inPath(e, "#group-dialog") && !inPath(e, "#group-btn") && !inPath(e, "#mmenu")) closeGroup();
   });
 
   var aboutLastFocus = null;

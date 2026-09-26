@@ -1,5 +1,11 @@
-
-
+/* ==========================================================================
+   神秘电子音乐体系 · app.js (UI v3 "CATALOGUE")
+   --------------------------------------------------------------------------
+   保留原有能力：模糊搜索 + 高亮 / 键盘导航 / 深链 (#曲风名) / 焦点陷阱 /
+   giscus 加载与失败状态 / 移动端下拉关闭
+   版式改为「印刷目录」：左目录 + 卷首 + 篇章分节 + 右侧翻页卡（详情）
+   新增：目录滚动联动、随机一条、关联条目互跳、复制链接、深浅配色
+   ========================================================================== */
 (function () {
   "use strict";
 
@@ -8,6 +14,7 @@
   var tocList = document.getElementById("toc-list");
   var masthead = document.getElementById("masthead");
 
+  /* ------------------------------- helpers -------------------------------- */
   function $(sel, root) {
     return (root || document).querySelector(sel);
   }
@@ -19,7 +26,7 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c;
     });
   }
-
+  // 数据里的字面 <br> 是作者手写的换行标记：分段各自转义，仅 <br> 还原成真实换行
   function escBr(s) {
     return String(s)
       .split(/<br\s*\/?>/i)
@@ -29,12 +36,7 @@
   function pad2(n) {
     return (n < 10 ? "0" : "") + n;
   }
-  function clip(s, n) {
-    var t = String(s).replace(/\s+/g, " ").trim();
-    var arr = Array.from(t);
-    return arr.length > n ? arr.slice(0, n).join("") + "…" : t;
-  }
-
+  // 把 【https://…】 与裸链接转成可点小链接（操作对象已是转义后的文本）
   var URL_RE = /【\s*(https?:\/\/[^】\s]+?)\s*】|(https?:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&'()*+,;=%]+)/g;
   function linkify(html) {
     return String(html).replace(URL_RE, function (m, bracketed, bare) {
@@ -55,9 +57,7 @@
         label = (dm ? dm[1].replace(/^www\./i, "") : "链接") + " ↗";
       }
       return (
-        '<a class="link-out" href="' +
-        url +
-        '" target="_blank" rel="noopener" title="打开链接">' +
+        '<a class="link-out" href="' + url + '" target="_blank" rel="noopener" title="打开链接">' +
         esc(label) +
         "</a>" +
         tail
@@ -65,34 +65,25 @@
     });
   }
 
+  /* -------------------------------- 数据索引 ------------------------------- */
   if (typeof DATA === "undefined" || !DATA.chapters || !DATA.genres) {
     board.innerHTML =
-      '<section class="mast"><h1 class="mast-title">数据加载失败</h1>' +
-      '<p class="mast-deck">data.js 未能读取，请刷新重试。</p></section>';
+      '<div class="no-desc"><div class="nd-zh">数据加载失败</div>' +
+      '<span class="nd-hint">data.js 未能读取，请刷新重试</span></div>';
     return;
   }
 
   var GENRES = DATA.genres;
-  var CH_I = {};
+  var CC = {};
   var CHAPTER_NO = {};
 
   var chapters = DATA.chapters.filter(function (ch) {
     return ch && ch.tree && ch.tree.length;
   });
   chapters.forEach(function (ch, i) {
-    CH_I[ch.name] = i;
+    CC[ch.name] = ch.color || "#8a8a8a";
     CHAPTER_NO[ch.name] = pad2(i + 1);
   });
-  function chClass(name) {
-    return CH_I[name] === undefined ? "" : " c" + CH_I[name];
-  }
-
-  var NETEASE = (typeof window !== "undefined" && window.NETEASE_LINKS) || null;
-  function neteaseFor(text) {
-    if (!NETEASE) return null;
-    var v = NETEASE[text];
-    return v && v[0] ? v : null;
-  }
 
   function normKey(s) {
     return String(s)
@@ -142,64 +133,34 @@
     return n;
   }
 
-  var ROW_MAP = new Map();
-  var GENRE_ROW = new Map();
+  /* ------------------------------- 构建版面 -------------------------------- */
+  var ROW_MAP = new Map(); // normKey(label) -> row
+  var GENRE_ROW = new Map(); // genre object -> row
   var totalNodes = 0;
   var totalDesc = 0;
-  var totalEx = 0;
-
-  var DESC_BY_CH = {};
-  var totalNm = 0;
-  Object.keys(GENRES).forEach(function (k) {
-    var g = GENRES[k];
-    if (!g || !g.chapter) return;
-    DESC_BY_CH[g.chapter] = (DESC_BY_CH[g.chapter] || 0) + 1;
-    if (g.examples && g.examples.length) {
-      totalEx += g.examples.length;
-      g.examples.forEach(function (x) {
-        if (neteaseFor(x)) totalNm++;
-      });
-    }
-  });
 
   function treeHtml(nodes, level, chapterName) {
     var h = '<ul class="tree">';
     for (var i = 0; i < nodes.length; i++) {
       var n = nodes[i];
-      var g = findGenre(n.label);
-      var has = !!g;
+      var has = !!findGenre(n.label);
       var kids = n.children || [];
-      var lead = "";
-      if (level === 0 && g && g.desc) {
-        lead = '<span class="r-lead">' + esc(clip(g.desc, 78)) + "</span>";
-      }
       h +=
-        "<li" +
-        (kids.length ? ' class="has-kids"' : "") +
-        ">" +
-        '<a class="row l' +
-        Math.min(level, 3) +
+        "<li>" +
+        '<div class="row l' +
+        Math.min(level, 4) +
         (has ? " has-desc" : " no-desc") +
-        '" href="#' +
-        encodeURIComponent(n.label) +
         '" data-name="' +
         esc(n.label) +
         '" data-chapter="' +
         esc(chapterName) +
         '" data-desc="' +
         (has ? "1" : "0") +
-        '"' +
-        (g && g.aka ? ' data-aka="' + esc(g.aka) + '"' : "") +
-        (level > 0 ? ' title="' + esc(n.label) + '"' : "") +
-        ">" +
-        '<span class="r-mark" aria-hidden="true"></span>' +
-        '<span class="r-body"><span class="r-name">' +
+        '" title="' +
         esc(n.label) +
-        "</span>" +
-        lead +
-        "</span>" +
-        '<span class="r-open" aria-hidden="true">打开 →</span>' +
-        "</a>";
+        '"><span class="dot"></span><span class="lbl">' +
+        esc(n.label) +
+        "</span></div>";
       if (kids.length) h += treeHtml(kids, level + 1, chapterName);
       h += "</li>";
     }
@@ -208,33 +169,39 @@
 
   function chapterHtml(ch, i) {
     var nodeCount = countTree(ch.tree);
-    var descCount = DESC_BY_CH[ch.name] || 0;
+    var descCount = 0;
+    Object.keys(GENRES).forEach(function (k) {
+      if (GENRES[k].chapter === ch.name) descCount++;
+    });
     totalNodes += nodeCount;
     totalDesc += descCount;
     return (
-      '<section class="chapter c' +
-      i +
-      '" id="ch-' +
+      '<section class="chapter" id="ch-' +
       i +
       '" data-chapter="' +
       esc(ch.name) +
+      '" style="--cc:' +
+      esc(ch.color || "#8a8a8a") +
       '">' +
       '<header class="chapter-head">' +
-      '<span class="ch-bar" aria-hidden="true"></span>' +
-      '<span class="ch-no">' +
+      '<div class="chapter-titlebar">' +
+      '<span class="chapter-no">' +
       CHAPTER_NO[ch.name] +
       "</span>" +
-      '<h2 class="ch-title">' +
+      '<h2 class="chapter-title">' +
       esc(ch.name) +
       "</h2>" +
-      '<span class="ch-meta">' +
+      "</div>" +
+      '<div class="chapter-side">' +
+      '<span class="chapter-meta">' +
       nodeCount +
-      " 条目 · " +
+      " 个条目 · " +
       descCount +
       " 篇介绍</span>" +
-      '<button type="button" class="ch-toggle" aria-expanded="true" aria-controls="ch-body-' +
+      '<button type="button" class="chapter-toggle" aria-expanded="true" aria-controls="ch-body-' +
       i +
       '"><span class="tg-ico" aria-hidden="true"></span><span class="tg-txt">折叠</span></button>' +
+      "</div>" +
       "</header>" +
       '<div class="chapter-body" id="ch-body-' +
       i +
@@ -247,131 +214,74 @@
 
   var chaptersHtml = chapters.map(chapterHtml).join("");
 
-  var keyStrip =
-    '<ol class="key-strip">' +
-    chapters
-      .map(function (ch, i) {
-        return (
-          '<li class="key-item c' +
-          i +
-          '"><a href="#ch-' +
-          i +
-          '" data-i="' +
-          i +
-          '" title="' +
-          esc(ch.name) +
-          " · " +
-          countTree(ch.tree) +
-          ' 条">' +
-          '<span class="key-block" aria-hidden="true"></span>' +
-          '<span class="key-no">' +
-          CHAPTER_NO[ch.name] +
-          "</span>" +
-          "</a></li>"
-        );
-      })
-      .join("") +
-    "</ol>";
-
-  var mastHtml =
-    '<section class="mast">' +
-    '<div class="mast-eyebrow"><span>叶亦苏 Yeisu 整理</span></div>' +
-    '<h1 class="mast-title">电子音乐风格体系</h1>' +
-    '<p class="mast-latin">An Electronic Music Taxonomy</p>' +
-    '<p class="mast-deck">收录 <b>UK Bass</b>、<b>US Bass</b>、<b>HDM</b>、<b>Hardcore</b>、<b>Trance</b>、<b>Techno</b>、<b>House</b>、<b>Breakbeat</b> 等 ' +
+  var heroHtml =
+    '<section class="hero">' +
+    '<h1 class="hero-title">电子音乐风格体系</h1>' +
+    '<p class="hero-sub">An Electronic Music Taxonomy</p>' +
+    '<p class="hero-deck">收录 UK Bass、US Bass、HDM、Hardcore、Trance、Techno、House、Breakbeat 等 ' +
     chapters.length +
-    " 个篇章、共 <b>" +
+    " 个篇章、共 " +
     totalNodes +
-    "</b> 条曲风条目，其中 <b>" +
+    " 条曲风条目，其中 " +
     totalDesc +
-    "</b> 条附有介绍。左侧目录按篇章编号索引，点击任意条目在右侧展开详情；按 <kbd>/</kbd> 直接搜索，按 <kbd>R</kbd> 随机翻一条。</p>" +
-    '<div class="mast-stats">' +
-    '<div class="stat"><b>' +
+    " 条附有介绍。点击任意条目展开详情，按 / 直接搜索。</p>" +
+    '<div class="hero-stats">' +
+    '<span class="stat"><b>' +
     chapters.length +
-    "</b><span>篇章 Chapters</span></div>" +
-    '<div class="stat"><b>' +
+    "</b>篇章</span>" +
+    '<span class="stat"><b>' +
     totalNodes +
-    "</b><span>曲风条目 Entries</span></div>" +
-    '<div class="stat"><b>' +
+    "</b>条目</span>" +
+    '<span class="stat"><b>' +
     totalDesc +
-    "</b><span>附有介绍 Noted</span></div>" +
-    '<div class="stat"><b>' +
-    totalEx +
-    "</b><span>例曲推荐 Tracks</span></div>" +
-    "</div>" +
-    '<div class="key">' +
-    '<div class="key"><div class="key-head"><span>色标</span><i>Colour Key</i><span class="key-live" id="key-live"><em>01</em>House (99条目)</span></div>' +
-    keyStrip +
-    '<div class="key-note">' +
-    '<span><i class="on"></i>附有介绍</span>' +
-    '<span><i></i>介绍待补充</span>' +
-    "<span>色块 = 篇章标识，目录、章节与详情面板同色</span>" +
-    "</div>" +
-    "</div>" +
-    '<div class="mast-links">' +
-    '<button type="button" class="btn js-random">随便看一条</button>' +
-    '<a class="link-quiet" href="https://www.bilibili.com/video/BV1tusFePEUM/?share_source=copy_web&amp;vd_source=4a668a5ff37aa77ec566058febd2633a" target="_blank" rel="noopener">资料来源 ↗</a>' +
-    '<a class="link-quiet" href="https://github.com/YeisuQwQ/music_genre/issues" target="_blank" rel="noopener">纠错 / 补充 ↗</a>' +
+    "</b>篇介绍</span>" +
+    '<button type="button" class="ghost-btn" id="random-btn">随便看一条</button>' +
+    '<a class="ghost-btn" href="https://www.bilibili.com/video/BV1tusFePEUM/?share_source=copy_web&amp;vd_source=4a668a5ff37aa77ec566058febd2633a" target="_blank" rel="noopener">资料来源 ↗</a>' +
     "</div>" +
     "</section>";
 
   var colophonHtml =
     '<footer class="colophon">' +
-    '<dl class="colo-rows">' +
-    "<div class=\"colo-row\"><dt>篇章</dt><dd>" +
-    chapters.length +
-    " 个</dd></div>" +
-    "<div class=\"colo-row\"><dt>条目</dt><dd>" +
-    totalNodes +
-    " 条</dd></div>" +
-    "<div class=\"colo-row\"><dt>介绍</dt><dd>" +
-    totalDesc +
-    " 篇</dd></div>" +
-    "<div class=\"colo-row\"><dt>例曲</dt><dd>" +
-    totalEx +
-    " 首" +
-    (totalNm ? "（" + totalNm + " 首可跳转网易云）" : "") +
-    "</dd></div>" +
-    "<div class=\"colo-row\"><dt>反馈</dt><dd>GitHub Issues · QQ 3069309919</dd></div>" +
-    "</dl>" +
+    '<div class="colo-brand">神秘电子音乐体系</div>' +
     '<a class="colo-top" href="#top">回到顶部 ↑</a>' +
+    '<div class="colo-lines">' +
+    "<p>由 叶亦苏 Yeisu（YeisuQwQ）整理维护。资料来源于 B 站视频《全网最全！1000+个电音风格/标签科普介绍视频》。</p>" +
+    '<p>发现错误或有补充，欢迎前往 <a href="https://github.com/YeisuQwQ/music_genre/issues" target="_blank" rel="noopener">GitHub Issues</a>，或联系 QQ 3069309919。</p>' +
+    "</div>" +
     "</footer>";
 
-  board.innerHTML = mastHtml + chaptersHtml + colophonHtml;
+  board.innerHTML = heroHtml + chaptersHtml + colophonHtml;
 
   var sections = $$(".chapter", board);
   var allRows = $$(".row", board);
 
-  allRows.forEach(function (row, i) {
-    row.dataset.idx = i;
+  allRows.forEach(function (row) {
     var nk = normKey(row.dataset.name);
     if (!ROW_MAP.has(nk)) ROW_MAP.set(nk, row);
     var g = findGenre(row.dataset.name);
     if (g && !GENRE_ROW.has(g)) GENRE_ROW.set(g, row);
   });
 
+  /* ------------------------------- 篇章目录 -------------------------------- */
   tocList.innerHTML = chapters
     .map(function (ch, i) {
       return (
         "<li>" +
-        '<a class="toc-item c' +
-        i +
-        '" href="#ch-' +
+        '<a class="toc-item" href="#ch-' +
         i +
         '" data-i="' +
         i +
-        '" title="' +
-        esc(ch.name) +
+        '" style="--cc:' +
+        esc(ch.color || "#8a8a8a") +
         '">' +
-        '<span class="toc-chip" aria-hidden="true"></span>' +
+        '<span class="toc-tick" aria-hidden="true"></span>' +
         '<span class="toc-no">' +
         CHAPTER_NO[ch.name] +
         "</span>" +
         '<span class="toc-name">' +
         esc(ch.name) +
         "</span>" +
-        '<span class="toc-lead" aria-hidden="true"></span>' +
-        '<span class="toc-n2">' +
+        '<span class="toc-n">' +
         countTree(ch.tree) +
         "</span>" +
         "</a></li>"
@@ -381,17 +291,11 @@
 
   var tocItems = $$(".toc-item", tocList);
   var tocTotal = document.getElementById("toc-total");
-  if (tocTotal) tocTotal.textContent = pad2(chapters.length);
+  if (tocTotal) tocTotal.textContent = chapters.length;
   var tocFoot = document.getElementById("toc-foot");
   if (tocFoot) {
     tocFoot.innerHTML =
-      "共 " +
-      totalNodes +
-      " 条曲风 · " +
-      totalDesc +
-      " 篇介绍<br />" +
-      '<button type="button" class="link-quiet js-expand" style="margin-top:8px">全部展开</button> ' +
-      '<button type="button" class="link-quiet js-collapse" style="margin-top:8px">全部折叠</button>';
+      "共 " + totalNodes + " 条曲风 · " + totalDesc + " 篇介绍<br />按 / 搜索，Esc 关闭面板";
   }
 
   function tocIsHorizontal() {
@@ -399,7 +303,8 @@
   }
   function ensureTocVisible(item) {
     if (!item) return;
-    if (tocIsHorizontal()) {
+    var horiz = tocIsHorizontal();
+    if (horiz) {
       var target = item.offsetLeft - tocEl.clientWidth / 2 + item.offsetWidth / 2;
       var max = tocEl.scrollWidth - tocEl.clientWidth;
       tocEl.scrollTo({ left: Math.max(0, Math.min(max, target)), behavior: "smooth" });
@@ -418,38 +323,25 @@
   }
 
   var spyActive = -1;
-  var sbNow = document.getElementById("sb-now");
-  var brandMark = $(".brand .mark-label");
   function setTocActive(i) {
     if (i === spyActive) return;
     spyActive = i;
     tocItems.forEach(function (b, k) {
       b.classList.toggle("on", k === i);
     });
-    var ch = chapters[i];
-    if (ch && sbNow) {
-      sbNow.style.setProperty("--ch", "var(--ch-d)");
-      sbNow.className = "sb-now" + chClass(ch.name);
-      sbNow.textContent = CHAPTER_NO[ch.name] + "  " + ch.name;
-    }
-    if (ch && brandMark) brandMark.style.fill = "";
     ensureTocVisible(tocItems[i]);
-  }
-
-  function setChapterCollapsed(sec, collapsed) {
-    sec.classList.toggle("collapsed", collapsed);
-    var tg = $(".ch-toggle", sec);
-    if (tg) {
-      tg.setAttribute("aria-expanded", collapsed ? "false" : "true");
-      var txt = $(".tg-txt", tg);
-      if (txt) txt.textContent = collapsed ? "展开" : "折叠";
-    }
   }
 
   function jumpToChapter(i, smooth) {
     var sec = sections[i];
     if (!sec) return;
-    setChapterCollapsed(sec, false);
+    sec.classList.remove("collapsed");
+    var tg = $(".chapter-toggle", sec);
+    if (tg) {
+      tg.setAttribute("aria-expanded", "true");
+      var txt = $(".tg-txt", tg);
+      if (txt) txt.textContent = "折叠";
+    }
     sec.scrollIntoView({ behavior: smooth === false ? "auto" : "smooth", block: "start" });
     setTocActive(i);
   }
@@ -461,34 +353,9 @@
     });
   });
 
-  $$(".key-item a", board).forEach(function (a) {
-    a.addEventListener("click", function (e) {
-      e.preventDefault();
-      jumpToChapter(parseInt(a.dataset.i, 10));
-    });
-  });
-
-  var keyLive = document.getElementById("key-live");
-  function keyLiveSet(i) {
-    var ch = chapters[i];
-    if (!ch || !keyLive) return;
-    keyLive.className = "key-live" + chClass(ch.name);
-    keyLive.innerHTML =
-      "<em>" + CHAPTER_NO[ch.name] + "</em>" + esc(ch.name) + " · " + countTree(ch.tree) + " 条目";
-  }
-  $$(".key-item a", board).forEach(function (a) {
-    var i = parseInt(a.dataset.i, 10);
-    a.addEventListener("mouseenter", function () {
-      keyLiveSet(i);
-    });
-    a.addEventListener("focus", function () {
-      keyLiveSet(i);
-    });
-  });
-  keyLiveSet(0);
-
+  /* ------------------------------- 滚动联动 -------------------------------- */
   function probeOffset() {
-    var off = 20;
+    var off = 24;
     if (masthead && getComputedStyle(masthead).position === "sticky") {
       off += masthead.getBoundingClientRect().height;
     }
@@ -525,27 +392,20 @@
   );
   window.addEventListener("resize", updateSpy);
 
+  /* -------------------------------- 计数 ---------------------------------- */
+  var countText =
+    chapters.length + " 篇章 · " + totalNodes + " 节点 · " + totalDesc + " 篇介绍";
   var aboutStats = document.getElementById("about-stats");
-  if (aboutStats) {
-    aboutStats.textContent =
-      chapters.length +
-      " 个篇章 · " +
-      totalNodes +
-      " 条曲风 · " +
-      totalDesc +
-      " 篇介绍 · " +
-      totalEx +
-      " 首例曲" +
-      (totalNm ? "（" + totalNm + " 首可跳转网易云音乐）" : "");
-  }
+  if (aboutStats) aboutStats.textContent = countText;
 
+  /* -------------------------------- 详情 ---------------------------------- */
   var detailEl = document.getElementById("detail");
   var detailInner = document.getElementById("detail-inner");
   var dimEl = document.getElementById("dim");
   var currentRow = null;
 
   function isMobile() {
-    return window.matchMedia("(max-width: 980px)").matches;
+    return window.matchMedia("(max-width: 900px)").matches;
   }
   function selectRow(row) {
     if (currentRow && currentRow !== row) currentRow.classList.remove("sel");
@@ -568,7 +428,7 @@
       dimEl.classList.add("show");
       document.body.classList.add("locked");
     }
-    detailInner.scrollTop = 0;
+    detailEl.scrollTop = 0;
   }
   function closeDetail(skipHash) {
     if (!detailEl.classList.contains("show")) {
@@ -582,14 +442,9 @@
     if (!skipHash) clearHash();
   }
 
-  function sec(label, sub, inner) {
+  function sec(label, inner) {
     return (
-      '<section class="d-sec"><h3 class="d-label">' +
-      label +
-      (sub ? " · " + sub : "") +
-      "</h3>" +
-      inner +
-      "</section>"
+      '<section class="d-sec"><h3 class="d-label">' + label + "</h3>" + inner + "</section>"
     );
   }
   function relRowFor(value) {
@@ -605,130 +460,95 @@
       var row = relRowFor(v);
       if (row) {
         return (
-          '<button type="button" class="chip" data-name="' + esc(row.dataset.name) + '">' + esc(v) + "</button>"
+          '<button type="button" class="rel-link" data-name="' +
+          esc(row.dataset.name) +
+          '">' +
+          esc(v) +
+          "</button>"
         );
       }
-
+      // 数据里有介绍、但目录树中没有出现的曲风：仍然可以直接打开
       if (findGenre(v)) {
-        return '<button type="button" class="chip" data-genre="' + esc(v) + '">' + esc(v) + "</button>";
+        return (
+          '<button type="button" class="rel-link" data-genre="' + esc(v) + '">' + esc(v) + "</button>"
+        );
       }
       return "<span>" + esc(v) + "</span>";
     });
     return (
-      '<div class="rel"><dt>' +
+      '<div class="d-rel"><dt>' +
       esc(label) +
       "<i>" +
       esc(note) +
       "</i></dt><dd>" +
-      parts.join("") +
+      parts.join('<span class="rel-sep">·</span>') +
       "</dd></div>"
     );
   }
 
-  var curIdx = -1;
-
-  function detailNavHtml() {
-    if (curIdx < 0) return "";
-    var prev = curIdx > 0 ? allRows[curIdx - 1] : null;
-    var next = curIdx < allRows.length - 1 ? allRows[curIdx + 1] : null;
-    return (
-      '<div class="d-nav">' +
-      '<button type="button" class="d-step" data-step="-1"' +
-      (prev ? ' title="' + esc(prev.dataset.name) + '"' : " disabled") +
-      ">← 上一条</button>" +
-      '<button type="button" class="d-step" data-step="1"' +
-      (next ? ' title="' + esc(next.dataset.name) + '"' : " disabled") +
-      ">下一条 →</button>" +
-      "</div>"
-    );
-  }
-
-  function showDetail(name, chapter, idx) {
+  function showDetail(name, chapter) {
     var g = findGenre(name);
-    var cc = CH_I[chapter];
-    detailEl.className = cc === undefined ? "show" : "show c" + cc;
-    curIdx = typeof idx === "number" ? idx : -1;
+    var cc = CC[chapter] || "#8a8a8a";
+    detailEl.style.setProperty("--cc", cc);
 
     var h = "";
-    h +=
-      '<div class="d-meta">' +
-      (cc === undefined ? "未分类" : "CH." + CHAPTER_NO[chapter] + " <em>" + esc(chapter) + "</em>") +
-      (curIdx >= 0 ? " · 第 " + pad2(curIdx + 1) + " / " + allRows.length + " 条" : "") +
-      "</div>";
+    h += '<div class="d-chapter"><span class="d-dot" aria-hidden="true"></span>';
+    h += esc(chapter || "未分类") + (CHAPTER_NO[chapter] ? " · " + CHAPTER_NO[chapter] : "");
+    h += "</div>";
     h += '<h2 class="d-title" id="detail-title">' + esc(name) + "</h2>";
-    if (g && g.aka) h += '<div class="d-aka"><b>A.K.A.</b> ' + esc(g.aka) + "</div>";
+    if (g && g.aka) h += '<div class="d-aka">A.K.A. ' + esc(g.aka) + "</div>";
     if (g && g.chapter && g.chapter !== chapter) {
-      h += '<div class="d-xref">详细介绍来自「' + esc(g.chapter) + "」篇章</div>";
+      h += '<div class="d-xref">↳ 详细介绍来自「' + esc(g.chapter) + "」篇章</div>";
     }
 
     if (!g || !g.desc) {
       h +=
-        '<section class="d-sec"><div class="no-desc"><div class="nd-zh">暂无详细介绍</div>' +
-        '<span class="nd-hint">欢迎在讨论区补充这一曲风的资料</span></div></section>';
+        '<div class="no-desc"><div class="nd-zh">暂无详细介绍</div>' +
+        '<span class="nd-hint">欢迎在讨论区补充这一曲风的资料</span></div>';
       h +=
         '<footer class="d-foot"><button type="button" class="d-copy" data-name="' +
         esc(name) +
-        '">复制链接</button>' +
-        detailNavHtml() +
-        "</footer>";
+        '">复制链接</button></footer>';
       detailInner.innerHTML = h;
       openDetail();
       setHash(name);
       return;
     }
 
-    h += sec("简介", "Notes", '<div class="d-desc">' + linkify(escBr(g.desc)) + "</div>");
+    h += sec("简介", '<div class="d-desc">' + linkify(escBr(g.desc)) + "</div>");
 
     var rels =
-      relBlock("上位", "影响 / 来源", g.ups) +
+      relBlock("上位", "影响 / 衍生来源", g.ups) +
       relBlock("下位", "派生子风格", g.downs) +
       (g.related
-        ? '<div class="rel"><dt>相关<i>Related</i></dt><dd>' + esc(g.related) + "</dd></div>"
+        ? '<div class="d-rel"><dt>相关<i>Related To</i></dt><dd>' +
+          esc(g.related) +
+          "</dd></div>"
         : "");
-    if (rels) h += sec("关联", "Lineage", '<dl class="d-rel">' + rels + "</dl>");
+    if (rels) h += sec("关联", rels);
 
     if (g.examples && g.examples.length) {
       var ex =
         '<ol class="d-ex">' +
         g.examples
-          .map(function (x, i) {
-            var nm = neteaseFor(x);
+          .map(function (ex2, i) {
             return (
               '<li><span class="ex-no">' +
               pad2(i + 1) +
               '</span><span class="ex-t">' +
-              linkify(escBr(x)) +
-              "</span>" +
-              (nm
-                ? '<span class="ex-act">' +
-                  '<button type="button" class="ex-play" data-id="' +
-                  esc(nm[0]) +
-                  '" data-label="' +
-                  esc(nm[1]) +
-                  '" aria-expanded="false" title="页面内试听：' +
-                  esc(nm[1]) +
-                  '">试听</button>' +
-                  '<a class="ex-nm" href="https://music.163.com/song?id=' +
-                  encodeURIComponent(nm[0]) +
-                  '" target="_blank" rel="noopener" title="网易云音乐：' +
-                  esc(nm[1]) +
-                  '">网易云<i>↗</i></a>' +
-                  "</span>"
-                : "") +
-              "</li>"
+              linkify(escBr(ex2)) +
+              "</span></li>"
             );
           })
           .join("") +
         "</ol>";
-      h += sec("例曲", "Tracks", ex);
+      h += sec("例曲", ex);
     }
 
     h +=
       '<footer class="d-foot"><button type="button" class="d-copy" data-name="' +
       esc(name) +
-      '">复制链接</button>' +
-      detailNavHtml() +
-      "</footer>";
+      '">复制链接</button></footer>';
 
     detailInner.innerHTML = h;
     openDetail();
@@ -744,13 +564,22 @@
     }, 1200);
   }
 
+  // 打开某条曲风（并保证它可见）
   function openRow(row, opts) {
     if (!row) return;
     opts = opts || {};
     var secEl = row.closest(".chapter");
-    if (secEl && secEl.classList.contains("collapsed")) setChapterCollapsed(secEl, false);
+    if (secEl && secEl.classList.contains("collapsed")) {
+      secEl.classList.remove("collapsed");
+      var tg = $(".chapter-toggle", secEl);
+      if (tg) {
+        tg.setAttribute("aria-expanded", "true");
+        var txt = $(".tg-txt", tg);
+        if (txt) txt.textContent = "折叠";
+      }
+    }
     selectRow(row);
-    showDetail(row.dataset.name, row.dataset.chapter, parseInt(row.dataset.idx, 10));
+    showDetail(row.dataset.name, row.dataset.chapter);
     if (opts.reveal !== false) {
       row.scrollIntoView({
         behavior: opts.instant ? "auto" : "smooth",
@@ -760,13 +589,7 @@
     }
   }
 
-  function stepDetail(dir) {
-    if (curIdx < 0) return;
-    var target = allRows[curIdx + dir];
-    if (!target) return;
-    openRow(target);
-  }
-
+  /* -------------------------------- 搜索 ---------------------------------- */
   var searchInput = document.getElementById("search");
   var searchBox = document.getElementById("search-results");
   var searchMatches = [];
@@ -790,7 +613,11 @@
     for (var i = 1; i <= a.length; i++) {
       var cur = [i];
       for (var k = 1; k <= b.length; k++) {
-        cur[k] = Math.min(prev[k] + 1, cur[k - 1] + 1, prev[k - 1] + (a[i - 1] === b[k - 1] ? 0 : 1));
+        cur[k] = Math.min(
+          prev[k] + 1,
+          cur[k - 1] + 1,
+          prev[k - 1] + (a[i - 1] === b[k - 1] ? 0 : 1)
+        );
       }
       prev = cur;
     }
@@ -859,7 +686,7 @@
   function hideSearch() {
     searchBox.style.display = "none";
     searchBox.innerHTML = "";
-    if (searchInput) searchInput.setAttribute("aria-expanded", "false");
+    searchInput.setAttribute("aria-expanded", "false");
     clearActiveOption();
   }
 
@@ -875,38 +702,24 @@
     allRows.forEach(function (row) {
       var nc = normClean(row.dataset.name);
       var r = fuzzySearch(qc, nc);
-      var via = "name";
-      var ak = row.dataset.aka;
-      if (ak && (!r || r.type !== "contains")) {
-        var akc = normClean(ak);
-        var ra = fuzzySearch(qc, akc);
-        if (ra && (!r || ra.score > r.score + 4)) {
-          r = ra;
-          nc = akc;
-          via = "aka";
-        }
-      }
-      if (r) scored.push({ row: row, r: r, nc: nc, via: via });
+      if (r) scored.push({ row: row, r: r, nc: nc });
     });
     scored.sort(function (a, b) {
       return b.r.score - a.r.score || a.r.start - b.r.start;
     });
     if (!scored.length) {
       searchBox.style.display = "block";
-      searchBox.innerHTML = '<div class="sr-empty">没有找到与「' + esc(q) + "」相关的曲风</div>";
+      searchBox.innerHTML =
+        '<div class="sr-empty">没有找到与「' + esc(q) + "」相关的曲风</div>";
       searchInput.setAttribute("aria-expanded", "true");
       return;
     }
-    var exact = scored
-      .filter(function (x) {
-        return x.r.type === "contains";
-      })
-      .slice(0, 40);
-    var fuzzy = scored
-      .filter(function (x) {
-        return x.r.type !== "contains";
-      })
-      .slice(0, 20);
+    var exact = scored.filter(function (x) {
+      return x.r.type === "contains";
+    }).slice(0, 40);
+    var fuzzy = scored.filter(function (x) {
+      return x.r.type !== "contains";
+    }).slice(0, 20);
     searchMatches = exact.concat(fuzzy).map(function (x) {
       return x.row;
     });
@@ -916,7 +729,6 @@
       var r = x.r;
       var nc = x.nc;
       var name = row.dataset.name;
-      var shown = x.via === "aka" ? row.dataset.aka : name;
       var ori = [];
       if (r.type === "contains") {
         for (var k = r.start; k < r.start + r.len; k++) ori.push(nc.map[k]);
@@ -931,17 +743,17 @@
       }
       var oriSet = new Set(ori);
       var hl = "";
-      for (var k4 = 0; k4 < shown.length; k4++) {
-        hl += oriSet.has(k4) ? "<mark>" + esc(shown[k4]) + "</mark>" : esc(shown[k4]);
+      for (var k4 = 0; k4 < name.length; k4++) {
+        hl += oriSet.has(k4) ? "<mark>" + esc(name[k4]) + "</mark>" : esc(name[k4]);
       }
-      if (x.via === "aka") hl += '<i class="sr-alias">（' + esc(name) + "）</i>";
+      var cc = CC[row.dataset.chapter] || "#8a8a8a";
       return (
-        '<div class="sr-item' +
-        chClass(row.dataset.chapter) +
-        '" role="option" id="sr-opt-' +
+        '<div class="sr-item" role="option" id="sr-opt-' +
         i +
         '" aria-selected="false" data-idx="' +
         i +
+        '" style="--cc:' +
+        esc(cc) +
         '"><span class="sr-tick" aria-hidden="true"></span><span class="sr-name">' +
         hl +
         '</span><span class="sr-chap">' +
@@ -977,83 +789,25 @@
     openRow(row);
   }
 
+  /* ------------------------------- 事件绑定 -------------------------------- */
+  // 目录树 / 折叠
   board.addEventListener("click", function (e) {
-    var tg = e.target.closest(".ch-toggle");
+    var tg = e.target.closest(".chapter-toggle");
     if (tg) {
       var secEl = tg.closest(".chapter");
-      setChapterCollapsed(secEl, !secEl.classList.contains("collapsed"));
+      var collapsed = secEl.classList.toggle("collapsed");
+      tg.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      var txt = $(".tg-txt", tg);
+      if (txt) txt.textContent = collapsed ? "展开" : "折叠";
       return;
     }
     var row = e.target.closest(".row");
-    if (row) {
-      e.preventDefault();
-      openRow(row, { reveal: false });
-      return;
-    }
-    if (e.target.closest(".js-random")) {
-      randomEntry();
-    }
+    if (row) openRow(row, { reveal: false });
   });
 
-  document.addEventListener("click", function (e) {
-    var ex = e.target.closest(".js-expand");
-    if (ex) {
-      sections.forEach(function (s) {
-        setChapterCollapsed(s, false);
-      });
-      return;
-    }
-    var co = e.target.closest(".js-collapse");
-    if (co) {
-      sections.forEach(function (s) {
-        setChapterCollapsed(s, true);
-      });
-      return;
-    }
-  });
-
+  // 详情面板内的关联跳转 / 复制链接
   detailEl.addEventListener("click", function (e) {
-    var playBtn = e.target.closest(".ex-play");
-    if (playBtn) {
-      var li = playBtn.closest("li");
-      if (!li) return;
-      var active = playBtn.classList.contains("on");
-
-      $$(".ex-player", detailEl).forEach(function (el) {
-        el.remove();
-      });
-      $$(".ex-play.on", detailEl).forEach(function (b) {
-        b.classList.remove("on");
-        b.setAttribute("aria-expanded", "false");
-        b.textContent = "试听";
-      });
-      if (active) return;
-
-      playBtn.classList.add("on");
-      playBtn.setAttribute("aria-expanded", "true");
-      playBtn.textContent = "收起";
-
-      var songId = playBtn.dataset.id;
-      var songLabel = playBtn.dataset.label;
-      var wrap = document.createElement("div");
-      wrap.className = "ex-player";
-      wrap.innerHTML =
-        '<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="330" height="86" src="https://music.163.com/outchain/player?type=2&id=' +
-        encodeURIComponent(songId) +
-        '&auto=1&height=66" title="网易云音乐外链播放器：' +
-        esc(songLabel) +
-        '"></iframe>' +
-        '<span class="ex-player-note">外链播放器 · 网易云音乐</span>';
-      li.appendChild(wrap);
-      return;
-    }
-
-    var step = e.target.closest(".d-step");
-    if (step) {
-      stepDetail(parseInt(step.dataset.step, 10));
-      return;
-    }
-    var link = e.target.closest(".chip");
+    var link = e.target.closest(".rel-link");
     if (link) {
       if (link.dataset.genre) {
         var g2 = findGenre(link.dataset.genre);
@@ -1068,7 +822,9 @@
       return;
     }
     var copy = e.target.closest(".d-copy");
-    if (copy) copyLink(copy);
+    if (copy) {
+      copyLink(copy);
+    }
   });
 
   function copyLink(btn) {
@@ -1102,24 +858,26 @@
     }
   }
 
-  $(".d-close").addEventListener("click", function () {
+  document.querySelector(".d-close").addEventListener("click", function () {
     closeDetail();
   });
-  if (dimEl)
-    dimEl.addEventListener("click", function () {
-      closeDetail();
-    });
+  if (dimEl) dimEl.addEventListener("click", function () {
+    closeDetail();
+  });
 
-  function randomEntry() {
-    var pool = allRows.filter(function (r) {
-      return r.dataset.desc === "1";
-    });
-    if (!pool.length) return;
-    openRow(pool[Math.floor(Math.random() * pool.length)]);
-  }
+  // 随机一条
   var randomBtn = document.getElementById("random-btn");
-  if (randomBtn) randomBtn.addEventListener("click", randomEntry);
+  if (randomBtn) {
+    randomBtn.addEventListener("click", function () {
+      var pool = allRows.filter(function (r) {
+        return r.dataset.desc === "1";
+      });
+      if (!pool.length) return;
+      openRow(pool[Math.floor(Math.random() * pool.length)]);
+    });
+  }
 
+  // 搜索交互
   searchInput.addEventListener("input", function () {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(function () {
@@ -1149,34 +907,21 @@
     if (!isNaN(idx)) pickSearch(idx);
   });
 
-  function inPath(e, sel) {
-    if (e.composedPath) {
-      var path = e.composedPath();
-      for (var i = 0; i < path.length; i++) {
-        var el = path[i];
-        if (el && el.nodeType === 1 && el.matches && el.matches(sel)) return true;
-      }
-      return false;
-    }
-    var t = e.target;
-    return !!(t && t.closest && t.closest(sel));
-  }
-
   document.addEventListener("click", function (e) {
     if (
-      !inPath(e, ".row") &&
-      !inPath(e, ".js-random") &&
-      !inPath(e, "#detail") &&
-      !inPath(e, "#masthead") &&
-      !inPath(e, "#toc")
+      !e.target.closest(".row") &&
+      !e.target.closest("#detail") &&
+      !e.target.closest("#masthead") &&
+      !e.target.closest("#toc")
     ) {
       closeDetail();
     }
-    if (!inPath(e, "#search-results") && !inPath(e, "#search")) hideSearch();
-    if (!inPath(e, "#about-dialog") && !inPath(e, "#about-btn")) closeAbout();
-    if (!inPath(e, "#group-dialog") && !inPath(e, "#group-btn")) closeGroup();
+    if (!e.target.closest("#search-results") && !e.target.closest("#search")) hideSearch();
+    if (!e.target.closest("#about-dialog") && !e.target.closest("#about-btn")) closeAbout();
+    if (!e.target.closest("#group-dialog") && !e.target.closest("#group-btn")) closeGroup();
   });
 
+  /* ------------------------------ 弹窗（关于/讨论区） ------------------------ */
   var aboutLastFocus = null;
   var groupLastFocus = null;
   var FOCUS_TRAP = "#masthead, #toc, #board, #detail";
@@ -1191,9 +936,8 @@
     aboutLastFocus = document.activeElement;
     trapFocus(true);
     document.getElementById("about-mask").classList.add("show");
-    var d = document.getElementById("about-dialog");
-    d.classList.add("show");
-    d.focus({ preventScroll: true });
+    document.getElementById("about-dialog").classList.add("show");
+    document.getElementById("about-dialog").focus({ preventScroll: true });
   }
   function closeAbout() {
     var dlg = document.getElementById("about-dialog");
@@ -1216,7 +960,10 @@
   function giscusSetTheme() {
     var frame = document.querySelector("iframe.giscus-frame");
     if (frame && frame.contentWindow) {
-      frame.contentWindow.postMessage({ giscus: { setConfig: { theme: giscusTheme() } } }, "https://giscus.app");
+      frame.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: giscusTheme() } } },
+        "https://giscus.app"
+      );
     }
   }
   function groupLoadingError() {
@@ -1228,9 +975,9 @@
     }
     var ld = document.getElementById("group-loading");
     if (!ld) return;
-    var bar = ld.querySelector(".gl-bar");
-    if (bar) bar.style.display = "none";
-    var txt = ld.querySelector(".gl-txt");
+    var spin = ld.querySelector(".group-spinner");
+    if (spin) spin.style.display = "none";
+    var txt = ld.querySelector("span");
     if (txt) txt.textContent = "评论区暂时无法加载，请检查网络后重试";
   }
   function hideGroupLoading() {
@@ -1284,9 +1031,8 @@
     groupLastFocus = document.activeElement;
     trapFocus(true);
     document.getElementById("group-mask").classList.add("show");
-    var d = document.getElementById("group-dialog");
-    d.classList.add("show");
-    d.focus({ preventScroll: true });
+    document.getElementById("group-dialog").classList.add("show");
+    document.getElementById("group-dialog").focus({ preventScroll: true });
     showGroupLoading();
     watchGiscusFrame();
     if (!giscusTimeout && !giscusReady && !giscusErrorShown) {
@@ -1334,6 +1080,7 @@
   document.getElementById("group-mask").addEventListener("click", closeGroup);
   document.querySelector("#group-dialog .dlg-close").addEventListener("click", closeGroup);
 
+  /* ------------------------------- 深浅配色 -------------------------------- */
   var themeBtn = document.getElementById("theme-btn");
   if (themeBtn) {
     themeBtn.addEventListener("click", function () {
@@ -1343,11 +1090,12 @@
         localStorage.setItem("mg-theme", next);
       } catch (e) {}
       var m = document.getElementById("meta-theme");
-      if (m) m.setAttribute("content", next === "dark" ? "#0e0e0f" : "#f7f5f0");
+      if (m) m.setAttribute("content", next === "dark" ? "#141210" : "#f7f4ed");
       giscusSetTheme();
     });
   }
 
+  /* ------------------------------- 键盘快捷键 ------------------------------ */
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       closeDetail();
@@ -1357,30 +1105,16 @@
       if (document.activeElement === searchInput) searchInput.blur();
       return;
     }
-    var typing = e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
-    if (typing) return;
-    if (e.key === "/") {
+    var typing =
+      e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA");
+    if (!typing && e.key === "/") {
       e.preventDefault();
       searchInput.focus();
       searchInput.select();
-      return;
-    }
-    if (e.key === "r" || e.key === "R") {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      randomEntry();
-      return;
-    }
-    if (e.key === "ArrowRight" && detailEl.classList.contains("show")) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      stepDetail(1);
-      return;
-    }
-    if (e.key === "ArrowLeft" && detailEl.classList.contains("show")) {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      stepDetail(-1);
     }
   });
 
+  /* ---------------------------- 移动端下拉关闭 ---------------------------- */
   var touchStartY = 0;
   detailEl.addEventListener(
     "touchstart",
@@ -1393,11 +1127,12 @@
     "touchmove",
     function (e) {
       var dy = e.touches[0].clientY - touchStartY;
-      if (dy > 70 && detailInner.scrollTop <= 0) closeDetail();
+      if (dy > 70 && detailEl.scrollTop <= 0) closeDetail();
     },
     { passive: true }
   );
 
+  /* ------------------------------- 深链恢复 -------------------------------- */
   (function openFromHash() {
     var raw = location.hash.slice(1);
     if (!raw) return;
@@ -1417,14 +1152,12 @@
   updateSpy();
 
   console.log(
-    "神秘电子音乐体系 · INDEX — " +
+    "神秘电子音乐体系 · CATALOGUE — " +
       chapters.length +
       " 篇章, " +
       totalNodes +
-      " 条目, " +
+      " 节点, " +
       totalDesc +
-      " 篇介绍, " +
-      totalEx +
-      " 首例曲"
+      " 篇介绍"
   );
 })();

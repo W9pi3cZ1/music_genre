@@ -650,7 +650,7 @@
       if (findGenre(v)) {
         return '<button type="button" class="chip" data-genre="' + esc(v) + '">' + esc(v) + "</button>";
       }
-      return "<span>" + esc(v) + "</span>";
+      return '<span class="chip chip-off" title="站内暂无此条目">' + esc(v) + "</span>";
     });
     return (
       '<div class="rel"><dt>' +
@@ -773,15 +773,6 @@
     setHash(name);
   }
 
-  function flashRow(row) {
-    row.classList.remove("flash");
-    void row.offsetWidth;
-    row.classList.add("flash");
-    setTimeout(function () {
-      row.classList.remove("flash");
-    }, 1200);
-  }
-
   function openRow(row, opts) {
     if (!row) return;
     opts = opts || {};
@@ -794,7 +785,6 @@
         behavior: opts.instant ? "auto" : "smooth",
         block: isSheet() ? "start" : "center",
       });
-      flashRow(row);
     }
   }
 

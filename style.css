@@ -1171,20 +1171,6 @@ mark {
   color: var(--ink);
 }
 
-.row.flash {
-  animation: rowflash 1.1s var(--ease);
-}
-@keyframes rowflash {
-  0% {
-    background: var(--ch-soft);
-    box-shadow: inset 2px 0 0 var(--ch);
-  }
-  100% {
-    background: transparent;
-    box-shadow: inset 2px 0 0 transparent;
-  }
-}
-
 .tree li {
   position: relative;
 }
@@ -1441,15 +1427,20 @@ mark {
   font-family: var(--font-text);
   font-size: 12.5px;
   color: var(--ink-2);
-  border: 1px solid var(--line);
+  background: var(--fill);
+  border: 1px solid var(--line-2);
   border-radius: 2px;
-  padding: 1px 8px;
+  padding: 2px 9px;
   transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
-.chip:hover {
+.chip:not(.chip-off):hover {
   background: var(--ink);
   color: var(--paper);
   border-color: var(--ink);
+}
+.chip-off {
+  color: var(--ink-3);
+  cursor: default;
 }
 
 .d-ex li {

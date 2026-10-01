@@ -588,6 +588,14 @@
   function isSheet() {
     return window.matchMedia("(max-width: 700px)").matches;
   }
+  var MOBILE_UA_RE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile/i;
+  function isMobileUA() {
+    if (typeof navigator === "undefined") return false;
+    var ua = navigator.userAgent || "";
+    if (MOBILE_UA_RE.test(ua)) return true;
+    if (navigator.maxTouchPoints > 1 && /Mac/.test(ua)) return true;
+    return false;
+  }
   function selectRow(row) {
     if (currentRow && currentRow !== row) currentRow.classList.remove("sel");
     currentRow = row;
@@ -1191,9 +1199,11 @@
         note.textContent = "外链播放器 · 网易云音乐";
       });
       frame.src =
-        "https://music.163.com/outchain/player?type=2&id=" +
-        encodeURIComponent(songId) +
-        "&auto=1&height=66";
+              "https://music.163.com/" +
+              (isMobileUA() ? "m/" : "") +
+              "outchain/player?type=2&id=" +
+              encodeURIComponent(songId) +
+              "&auto=1&height=66";
       wrap.appendChild(frame);
       wrap.appendChild(note);
       li.appendChild(wrap);

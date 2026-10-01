@@ -1,12 +1,7 @@
-/* ============================================================
-   电子音乐风格体系 — Google (Material) Design 重写版
-   浅色为默认，深色跟随 [data-theme="dark"]
-   ============================================================ */
-
 :root {
   color-scheme: light;
 
-  /* 表面与文字（Google 灰阶） */
+  
   --bg: #f8f9fa;
   --surface: #ffffff;
   --surface-2: #f1f3f4;
@@ -18,16 +13,15 @@
   --ink-4: #80868b;
   --faint: #9aa0a6;
 
-  /* 描边 */
+  
   --outline: #dadce0;
   --outline-soft: #e8eaed;
 
-  /* 主题色引擎：--hue 色相(0-360)，--cm 饱和度系数(0=单色)。
-     默认 hue 260 / cm 1 ≈ Google Blue #1a73e8 */
+  
   --hue: 260;
   --cm: 1;
 
-  /* 唯一强调色（由主题色引擎派生） */
+  
   --primary: oklch(0.55 calc(0.17 * var(--cm)) var(--hue));
   --primary-hover: oklch(0.47 calc(0.17 * var(--cm)) var(--hue));
   --primary-strong: oklch(0.42 calc(0.15 * var(--cm)) var(--hue));
@@ -38,20 +32,20 @@
   --scrim: rgba(32, 33, 36, 0.4);
   --sel: oklch(0.9 calc(0.055 * var(--cm)) var(--hue));
 
-  /* 阴影（Material Elevation） */
+  
   --elev-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
   --elev-2: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
   --elev-3: 0 4px 4px 0 rgba(60, 64, 67, 0.3), 0 8px 12px 6px rgba(60, 64, 67, 0.15);
   --shadow-sheet: -12px 0 36px rgba(60, 64, 67, 0.22);
 
-  /* 字体 */
+  
   --font-ui: "Google Sans", "Roboto", "Noto Sans SC", -apple-system, BlinkMacSystemFont,
     "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-body: "Roboto", "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI",
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  /* 尺寸 */
+  
   --mh: 64px;
   --sb: 32px;
   --rail: 264px;
@@ -105,7 +99,7 @@
   --shadow-sheet: -12px 0 36px rgba(0, 0, 0, 0.55);
 }
 
-/* ---------- 基础 ---------- */
+
 
 *,
 *::before,
@@ -224,7 +218,7 @@ mark {
   left: 10px;
 }
 
-/* 滚动条 */
+
 #toc,
 #detail-inner,
 #search-results,
@@ -253,7 +247,7 @@ mark {
   background: transparent;
 }
 
-/* ---------- 顶栏 ---------- */
+
 
 #masthead {
   position: sticky;
@@ -312,7 +306,7 @@ mark {
   color: var(--ink);
 }
 
-/* 搜索（Material 胶囊搜索框） */
+
 .searchwrap {
   position: relative;
   flex: 1 1 auto;
@@ -439,7 +433,7 @@ mark {
   color: var(--ink-3);
 }
 
-/* 顶栏按钮 */
+
 .mh-nav {
   display: flex;
   align-items: center;
@@ -498,7 +492,7 @@ mark {
   display: none;
 }
 
-/* 移动端菜单 */
+
 .mmenu {
   display: none;
 }
@@ -527,7 +521,7 @@ mark {
   color: var(--ink-4);
 }
 
-/* ---------- 布局与目录 ---------- */
+
 
 #layout {
   display: grid;
@@ -665,14 +659,14 @@ mark {
   color: var(--ink-4);
 }
 
-/* ---------- 主内容 ---------- */
+
 
 #board {
   min-width: 0;
   padding-bottom: 24px;
 }
 
-/* 首屏 */
+
 .mast {
   max-width: 780px;
   padding: 44px 0 12px;
@@ -741,7 +735,7 @@ mark {
   color: var(--ink-3);
 }
 
-/* 篇章索引 chips（取代旧色标） */
+
 .mast-chips {
   display: flex;
   flex-wrap: wrap;
@@ -824,10 +818,15 @@ mark {
   color: var(--ink);
 }
 
-/* 章节 */
+
 .chapter {
   margin-top: 20px;
   scroll-margin-top: calc(var(--mh) + 16px);
+}
+@media (max-width: 980px) {
+  .chapter {
+    scroll-margin-top: calc(var(--mh) + 60px);
+  }
 }
 
 .chapter-head {
@@ -892,7 +891,7 @@ mark {
   display: none;
 }
 
-/* 章节前言 */
+
 .ch-intro {
   max-width: 720px;
   margin: 16px 0 8px;
@@ -908,7 +907,7 @@ mark {
   margin-top: 16px;
 }
 
-/* 曲风树（Material 列表） */
+
 .tree {
   padding: 8px 0 16px;
 }
@@ -1000,7 +999,7 @@ mark {
   height: 20px;
 }
 
-/* 层级排版 */
+
 .row.l0 {
   margin-top: 6px;
   border-top: 1px solid var(--outline-soft);
@@ -1024,7 +1023,7 @@ mark {
   color: var(--ink-3);
 }
 
-/* 页脚 */
+
 .colophon {
   margin-top: 40px;
   border-top: 1px solid var(--outline-soft);
@@ -1065,7 +1064,7 @@ mark {
   color: var(--ink);
 }
 
-/* 调色板按钮 */
+
 #palette-btn .pp-dot {
   position: absolute;
   right: 7px;
@@ -1081,7 +1080,7 @@ mark {
   display: block;
 }
 
-/* 主题色弹窗（参考 blog DisplaySettings 的 M3 面板） */
+
 .palette-panel {
   position: absolute;
   top: calc(100% + 8px);
@@ -1179,7 +1178,7 @@ mark {
   font-variant-numeric: tabular-nums;
 }
 
-/* 彩虹色相滑轨（参考 blog 的 m3-slider） */
+
 .pp-slider {
   -webkit-appearance: none;
   appearance: none;
@@ -1286,7 +1285,7 @@ mark {
   }
 }
 
-/* ---------- 详情侧板 ---------- */
+
 
 #dim {
   position: fixed;
@@ -1459,7 +1458,7 @@ mark {
   color: var(--ink-4);
 }
 
-/* 关联 chips（Assist Chip） */
+
 .d-rel .rel {
   margin: 0 0 16px;
 }
@@ -1513,7 +1512,7 @@ mark {
   color: var(--faint);
 }
 
-/* 例曲 */
+
 .d-ex li {
   display: flex;
   align-items: flex-start;
@@ -1620,7 +1619,7 @@ mark {
   background: var(--fill);
 }
 
-/* 详情底部操作 */
+
 .d-foot {
   margin-top: 32px;
   padding-top: 16px;
@@ -1677,7 +1676,7 @@ mark {
   cursor: default;
 }
 
-/* ---------- 对话框 ---------- */
+
 
 .dlg-mask {
   position: fixed;
@@ -1851,7 +1850,7 @@ mark {
   min-height: 120px;
 }
 
-/* ---------- 状态栏 ---------- */
+
 
 #statusbar {
   position: fixed;
@@ -1906,7 +1905,73 @@ mark {
   text-decoration: underline;
 }
 
-/* ---------- 响应式 ---------- */
+
+
+#quickbar {
+  display: none;
+}
+
+@media (max-width: 980px) {
+  #quickbar {
+    display: flex;
+    position: sticky;
+    top: var(--mh);
+    z-index: 65;
+    gap: 6px;
+    align-items: stretch;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--outline-soft);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  #quickbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .qb-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    height: 34px;
+    padding: 0 12px;
+    border: 1px solid var(--outline);
+    border-radius: var(--r-full);
+    background: var(--surface);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    white-space: nowrap;
+    scroll-snap-align: start;
+    touch-action: manipulation;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+  .qb-item.on {
+    background: var(--primary-tint);
+    border-color: transparent;
+    color: var(--primary-strong);
+    font-weight: 500;
+  }
+
+  .qb-no {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-4);
+  }
+  .qb-item.on .qb-no {
+    color: var(--primary);
+  }
+
+  .qb-name {
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+
 
 @media (max-width: 1080px) {
   #layout {
@@ -1985,7 +2050,7 @@ mark {
     margin-left: 12px;
   }
 
-  /* 移动端搜索接管 */
+  
   body.searching {
     overflow: hidden;
   }
@@ -2059,7 +2124,7 @@ mark {
     pointer-events: auto;
   }
 
-  /* 首屏 */
+  
   .mast {
     padding-top: 28px;
   }
@@ -2094,7 +2159,7 @@ mark {
     margin-top: 20px;
   }
 
-  /* 章节 */
+  
   .ch-title {
     font-size: 18px;
   }
@@ -2113,7 +2178,7 @@ mark {
     padding-left: 12px;
   }
 
-  /* 详情改为底部抽屉 */
+  
   #detail {
     top: auto;
     left: 0;

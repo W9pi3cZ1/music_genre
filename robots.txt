@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://genre.yeisu.cn/sitemap.xml

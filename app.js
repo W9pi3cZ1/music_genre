@@ -94,7 +94,7 @@
     return v && v[0] ? v : null;
   }
 
-  /* aka 字段拆分为独立别名（顿号/逗号/分号分隔） */
+  
   function splitAka(aka) {
     if (!aka) return [];
     return String(aka)
@@ -382,6 +382,35 @@
   var tocItems = $$(".toc-item", tocList);
   var tocTotal = document.getElementById("toc-total");
   if (tocTotal) tocTotal.textContent = pad2(chapters.length);
+
+  
+  var quickbar = document.getElementById("quickbar");
+  var quickItems = [];
+  if (quickbar) {
+    quickbar.innerHTML = chapters
+      .map(function (ch, i) {
+        return (
+          '<button type="button" class="qb-item" data-i="' +
+          i +
+          '" aria-label="' +
+          esc(ch.name) +
+          '"><span class="qb-no">' +
+          CHAPTER_NO[ch.name] +
+          "</span>" +
+          '<span class="qb-name">' +
+          esc(ch.name) +
+          "</span></button>"
+        );
+      })
+      .join("");
+    quickItems = $$(".qb-item", quickbar);
+    quickItems.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        jumpToChapter(parseInt(btn.dataset.i, 10));
+      });
+    });
+  }
+
   var tocFoot = document.getElementById("toc-foot");
   if (tocFoot) {
     tocFoot.innerHTML =
@@ -418,6 +447,16 @@
   }
 
   var spyActive = -1;
+  var spyLockUntil = 0; 
+  var spyLockTimer = null;
+  function spyLockExtend() {
+    
+    spyLockUntil = performance.now() + 150;
+    if (spyLockTimer) clearTimeout(spyLockTimer);
+    spyLockTimer = setTimeout(function () {
+      spyLockUntil = 0;
+    }, 200);
+  }
   var sbNow = document.getElementById("sb-now");
   function setTocActive(i) {
     if (i === spyActive) return;
@@ -425,6 +464,15 @@
     tocItems.forEach(function (b, k) {
       b.classList.toggle("on", k === i);
     });
+    if (quickItems.length) {
+      quickItems.forEach(function (b, k) {
+        b.classList.toggle("on", k === i);
+      });
+      var cur = quickItems[i];
+      if (cur && cur.scrollIntoView) {
+        cur.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+      }
+    }
     var ch = chapters[i];
     if (ch && sbNow) {
       sbNow.textContent = CHAPTER_NO[ch.name] + "  " + ch.name;
@@ -446,8 +494,15 @@
     var sec = sections[i];
     if (!sec) return;
     setChapterCollapsed(sec, false);
-    sec.scrollIntoView({ behavior: smooth === false ? "auto" : "smooth", block: "start" });
-    setTocActive(i);
+    setTocActive(i); 
+    if (smooth === false) {
+      spyLockUntil = 0;
+      sec.scrollIntoView({ behavior: "auto", block: "start" });
+    } else {
+      
+      spyLockExtend();
+      sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   tocItems.forEach(function (item, i) {
@@ -468,6 +523,10 @@
     if (masthead && getComputedStyle(masthead).position === "sticky") {
       off += masthead.getBoundingClientRect().height;
     }
+    var qb = document.getElementById("quickbar");
+    if (qb && getComputedStyle(qb).display !== "none") {
+      off += qb.getBoundingClientRect().height;
+    }
     if (tocEl && getComputedStyle(tocEl).position === "sticky" && tocIsHorizontal()) {
       off += tocEl.getBoundingClientRect().height;
     }
@@ -475,6 +534,7 @@
   }
   function updateSpy() {
     if (!sections.length) return;
+    if (performance.now() < spyLockUntil) return; 
     var probe = window.scrollY + probeOffset();
     var best = 0;
     for (var i = 0; i < sections.length; i++) {
@@ -494,6 +554,8 @@
       spyTick = true;
       requestAnimationFrame(function () {
         spyTick = false;
+        
+        if (performance.now() < spyLockUntil) spyLockExtend();
         updateSpy();
       });
     },
@@ -612,12 +674,12 @@
     if (row) return row;
     var g = findGenre(value);
     if (g && GENRE_ROW.has(g)) return GENRE_ROW.get(g);
-    //aka 回退：引用值可能是某条目的别名
+
     g = findGenreByAka(value);
     if (g && GENRE_ROW.has(g)) return GENRE_ROW.get(g);
     return null;
   }
-  /* 按别名查条目（splitAka 拆分后归一化匹配） */
+  
   var AKA_INDEX = null;
   function findGenreByAka(value) {
     if (!value) return null;
@@ -931,7 +993,7 @@
       var aliasHit = null;
       if (ak) {
         var aliases = splitAka(ak);
-        // 逐个独立匹配：每个别名单独打分，取最优
+
         for (var ai = 0; ai < aliases.length; ai++) {
           var alc = normClean(aliases[ai]);
           var ra = fuzzySearch(qc, alc);
@@ -1455,7 +1517,7 @@
     });
   }
 
-  /* ---------- 主题色自定义面板 ---------- */
+  
 
   var paletteBtn = document.getElementById("palette-btn");
   var palettePanel = document.getElementById("palette-panel");
@@ -1514,7 +1576,7 @@
     }
   }
 
-  /* 面板右缘对齐调色按钮右缘（相对 .mh 定位）；按钮隐藏（移动端）时贴右 */
+  
   function positionPanel() {
     if (!palettePanel || !paletteBtn) return;
     var r = paletteBtn.getBoundingClientRect();

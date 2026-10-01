@@ -1,0 +1,12 @@
+# 备份文件
+data_backup_*.js
+style_v1_backup.css
+*_backup*.js
+*_backup*.css
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini

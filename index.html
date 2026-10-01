@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=yes" />
+    <meta name="msvalidate.01" content="319C3F5F865DED09F6791B8E7B5EB1E1" />
+    <meta name="theme-color" content="#f8f9fa" id="meta-theme" />
+
+    <script>
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("mg-theme");
+        } catch (e) {}
+        if (t !== "light" && t !== "dark") {
+          t =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        }
+        document.documentElement.dataset.theme = t;
+        try {
+          var tc = JSON.parse(localStorage.getItem("mg-theme-color") || "null");
+          if (tc && typeof tc.h === "number") {
+            var st = document.documentElement.style;
+            st.setProperty("--hue", String(tc.h));
+            if (typeof tc.cm === "number") st.setProperty("--cm", String(tc.cm));
+          }
+        } catch (e) {}
+        var m = document.getElementById("meta-theme");
+        if (m) m.setAttribute("content", t === "dark" ? "#131314" : "#f8f9fa");
+      })();
+    </script>
+
+    <title>电子音乐风格体系</title>
+    <meta
+      name="description"
+      content="叶亦苏Yeisu电子音乐资源站，整理UK Bass、US Bass、HDM、Hardcore、Trance、Techno、House、Breakbeat等电音风格体系与曲风资料，提供分类导航、曲目与体系解读。music_genre资源站由YeisuQwQ维护。"
+    />
+    <meta
+      name="keywords"
+      content="电子音乐,电音,风格体系,music_genre,UK Bass,US Bass,HDM,Hardcore,Trance,Techno,House,Breakbeat,叶亦苏,叶亦苏Yeisu,YeisuQwQ,Yeisu"
+    />
+    <meta name="robots" content="index,follow" />
+    <link rel="canonical" href="https://genre.yeisu.cn/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="叶亦苏Yeisu电子音乐风格体系" />
+    <meta property="og:title" content="电子音乐风格体系｜UK/US Bass、HDM、Hardcore、Trance、Techno、House、Breakbeat｜Yeisu" />
+    <meta property="og:description" content="UK Bass、US Bass、HDM、Hardcore、Trance、Techno、House、Breakbeat等电音曲风分类与资源，叶亦苏Yeisu、YeisuQwQ维护。" />
+    <meta property="og:url" content="https://genre.yeisu.cn/" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%A4%94%3C/text%3E%3C/svg%3E"
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      id="gf-css"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body id="top">
+    <a class="skip" href="#board">跳到曲风目录</a>
+
+    <header id="masthead">
+      <div class="mh">
+        <a class="brand" href="#top" aria-label="回到顶部">
+          <span class="brand-mark" aria-hidden="true">🤔</span>
+          <span class="brand-txt">
+            <span class="brand-name">神秘电子音乐体系</span>
+          </span>
+        </a>
+
+        <div class="searchwrap">
+          <svg class="search-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.2" stroke="currentColor" stroke-width="2" />
+            <path d="M15.3 15.3 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <input
+            type="text"
+            id="search"
+            placeholder="搜索曲风 / 别名 / 篇章"
+            aria-label="搜索曲风"
+            autocomplete="off"
+            spellcheck="false"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-controls="search-results"
+            aria-expanded="false"
+          />
+          <kbd class="search-kbd" aria-hidden="true">/</kbd>
+          <button type="button" class="search-cancel" id="search-cancel">取消</button>
+          <div id="search-results" role="listbox" aria-label="搜索结果"></div>
+        </div>
+
+        <nav class="mh-nav" aria-label="站点">
+          <button type="button" class="nav-btn" id="random-btn" title="随机打开一条（R）">随机</button>
+          <button type="button" class="nav-btn" id="group-btn">讨论</button>
+          <button type="button" class="nav-btn" id="about-btn">关于</button>
+          <a class="nav-btn" href="old/index.html" title="切换到旧版界面（CATALOGUE）">旧版 UI</a>
+          <button type="button" class="icon-btn" id="palette-btn" aria-label="自定义主题色" title="自定义主题色" aria-expanded="false" aria-controls="palette-panel">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01a1.5 1.5 0 0 1 1.12-2.49H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linejoin="round"
+              />
+              <circle cx="7.5" cy="11.5" r="1.15" fill="currentColor" />
+              <circle cx="10.5" cy="7.8" r="1.15" fill="currentColor" />
+              <circle cx="15" cy="7.8" r="1.15" fill="currentColor" />
+            </svg>
+          </button>
+          <button type="button" class="icon-btn" id="theme-btn" aria-label="切换深浅配色" title="切换深浅配色">
+            <svg class="i-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
+              <path
+                d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+              />
+            </svg>
+            <svg class="i-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M20 13.2A8.2 8.2 0 0 1 10.8 4 8.2 8.2 0 1 0 20 13.2Z"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </button>
+        </nav>
+
+        <button type="button" class="icon-btn menu-btn" id="menu-btn" aria-label="菜单" aria-expanded="false" aria-controls="mmenu">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+
+        <div class="palette-panel" id="palette-panel" role="dialog" aria-label="自定义主题色" aria-hidden="true">
+        <div class="pp-head">
+          <span class="pp-title">主题色</span>
+          <button type="button" class="pp-reset" id="palette-reset" title="恢复默认">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M5 10V6.8L3.4 8.4A7.5 7.5 0 1 0 12 4.5"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path d="M5 10h3.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="pp-row">
+          <span class="pp-swatch" id="pp-swatch" aria-hidden="true"></span>
+          <span class="pp-val" id="pp-hue-val">262</span>
+        </div>
+
+        <input type="range" class="pp-slider" id="pp-slider" min="0" max="360" step="5" value="262" aria-label="主题色色相" />
+
+        <div class="pp-label">配色风格</div>
+        <div class="pp-styles" role="radiogroup" aria-label="配色风格" id="pp-styles">
+          <button type="button" class="pp-style" role="radio" aria-checked="true" data-cm="1" style="--hue: 262"><span class="pp-dots"><i style="background: oklch(0.72 0.1 262)"></i><i style="background: oklch(0.68 0.08 262)"></i><i style="background: oklch(0.82 0.06 300)"></i></span><span class="pp-style-name">经典</span></button>
+          <button type="button" class="pp-style" role="radio" aria-checked="false" data-cm="1.1" style="--hue: 222"><span class="pp-dots"><i style="background: oklch(0.72 0.14 222)"></i><i style="background: oklch(0.66 0.12 255)"></i><i style="background: oklch(0.78 0.1 310)"></i></span><span class="pp-style-name">鲜艳</span></button>
+          <button type="button" class="pp-style" role="radio" aria-checked="false" data-cm="0.85" style="--hue: 172"><span class="pp-dots"><i style="background: oklch(0.74 0.12 172)"></i><i style="background: oklch(0.7 0.1 180)"></i><i style="background: oklch(0.8 0.1 200)"></i></span><span class="pp-style-name">清爽</span></button>
+          <button type="button" class="pp-style" role="radio" aria-checked="false" data-cm="0.95" style="--hue: 38"><span class="pp-dots"><i style="background: oklch(0.75 0.11 38)"></i><i style="background: oklch(0.72 0.1 55)"></i><i style="background: oklch(0.78 0.1 100)"></i></span><span class="pp-style-name">暖调</span></button>
+          <button type="button" class="pp-style" role="radio" aria-checked="false" data-cm="0.9" style="--hue: 322"><span class="pp-dots"><i style="background: oklch(0.72 0.12 322)"></i><i style="background: oklch(0.68 0.1 300)"></i><i style="background: oklch(0.8 0.08 280)"></i></span><span class="pp-style-name">粉彩</span></button>
+          <button type="button" class="pp-style" role="radio" aria-checked="false" data-cm="0" style="--hue: 262"><span class="pp-dots"><i style="background: oklch(0.9 0 0)"></i><i style="background: oklch(0.75 0 0)"></i><i style="background: oklch(0.6 0 0)"></i></span><span class="pp-style-name">单色</span></button>
+        </div>
+      </div>
+      </div>
+
+      <div class="mmenu" id="mmenu">
+        <button type="button" class="mm-item" id="mm-random">随便看一条<span class="mm-k">R</span></button>
+        <button type="button" class="mm-item" id="mm-group">讨论区</button>
+        <button type="button" class="mm-item" id="mm-about">关于本站</button>
+        <a class="mm-item" href="old/index.html">旧版 UI</a>
+        <button type="button" class="mm-item" id="mm-theme">切换深浅配色<span class="mm-k" id="mm-theme-state">浅色</span></button>
+        <button type="button" class="mm-item" id="mm-palette">自定义主题色</button>
+      </div>
+    </header>
+
+    <div id="layout">
+      <nav id="toc" aria-label="篇章索引">
+        <div class="toc-head">
+          <span class="toc-k">目录</span>
+          <span class="toc-k2">Index</span>
+          <span class="toc-n" id="toc-total"></span>
+        </div>
+        <ol class="toc-list" id="toc-list"></ol>
+        <div class="toc-legend" aria-hidden="true">
+          <span><i class="lg on"></i>附介绍</span>
+          <span><i class="lg"></i>待补充</span>
+        </div>
+        <div class="toc-foot" id="toc-foot"></div>
+      </nav>
+
+      <main id="board"></main>
+    </div>
+
+    <div id="dim"></div>
+
+    <aside id="detail" role="dialog" aria-modal="false" aria-labelledby="detail-title" tabindex="-1">
+      <div class="d-top" id="d-top">
+        <div class="d-bar" aria-hidden="true"></div>
+        <div class="d-grip" aria-hidden="true"></div>
+      </div>
+      <button type="button" class="d-close" aria-label="关闭详情">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <div id="detail-inner"></div>
+    </aside>
+
+    <div class="dlg-mask" id="about-mask"></div>
+    <div class="dlg" id="about-dialog" role="dialog" aria-modal="true" aria-label="关于本站" tabindex="-1">
+      <button type="button" class="dlg-close" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <h2 class="dlg-title">关于本站</h2>
+      <p class="dlg-sub">Colophon</p>
+
+      <dl class="about-rows">
+        <div class="about-row">
+          <dt>维护</dt>
+          <dd>叶亦苏 Yeisu（YeisuQwQ）</dd>
+        </div>
+        <div class="about-row">
+          <dt>数据</dt>
+          <dd id="about-stats">—</dd>
+        </div>
+        <div class="about-row">
+          <dt>来源</dt>
+          <dd>
+            资料来源于
+            <a
+              href="https://www.bilibili.com/video/BV1tusFePEUM/?share_source=copy_web&amp;vd_source=4a668a5ff37aa77ec566058febd2633a"
+              target="_blank"
+              rel="noopener"
+              >【全网最全！1000+个电音风格/标签科普介绍视频丨共计6个小时的电音宇宙漫游指南第四期！】</a
+            >
+          </dd>
+        </div>
+        <div class="about-row">
+          <dt>反馈</dt>
+          <dd>
+            如有错误可前往
+            <a href="https://github.com/YeisuQwQ/music_genre/issues" target="_blank" rel="noopener"
+              >GitHub 提交 issues</a
+            >，或联系 QQ：3069309919
+          </dd>
+        </div>
+      </dl>
+
+      <div class="about-keys">
+        <div class="about-keys-head">快捷键 · Keys</div>
+        <div class="krow"><kbd>/</kbd><span>聚焦搜索框</span></div>
+        <div class="krow"><kbd>↑</kbd><kbd>↓</kbd><span>在搜索结果中移动</span></div>
+        <div class="krow"><kbd>Enter</kbd><span>打开选中项</span></div>
+        <div class="krow"><kbd>R</kbd><span>随机打开一条曲风</span></div>
+        <div class="krow"><kbd>←</kbd><kbd>→</kbd><span>详情面板内切换上一条 / 下一条</span></div>
+        <div class="krow"><kbd>Esc</kbd><span>关闭面板与弹窗</span></div>
+      </div>
+    </div>
+
+    <div class="dlg-mask" id="group-mask"></div>
+    <div class="dlg dlg-wide" id="group-dialog" role="dialog" aria-modal="true" aria-label="讨论区" tabindex="-1">
+      <button type="button" class="dlg-close" aria-label="关闭">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <h2 class="dlg-title">讨论区</h2>
+      <p class="dlg-sub">Discussion</p>
+      <div class="group-body">
+        <div class="group-loading" id="group-loading">
+          <span class="gl-txt">评论加载中</span>
+          <span class="gl-bar" aria-hidden="true"></span>
+        </div>
+        <div class="giscus"></div>
+      </div>
+    </div>
+
+    <div id="statusbar">
+      <span class="sb-now" id="sb-now">—</span>
+      <span class="sb-hint"
+        ><kbd>/</kbd> 搜索 · <kbd>R</kbd> 随机 · <kbd>←</kbd><kbd>→</kbd> 上下条 · <kbd>Esc</kbd> 关闭</span
+      >
+      <a class="sb-top" href="#top">回到顶部 ↑</a>
+    </div>
+
+    <script src="data.js" defer></script>
+    <script src="netease.js" defer></script>
+    <script src="app.js" defer></script>
+  </body>
+</html>
